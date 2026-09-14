@@ -1,0 +1,101 @@
+#!/bin/bash
+# root@slayer — Gobuster Kaynak Kodundan Türkçe Build
+# Kali'nde çalıştır: sudo bash slayer_build.sh
+
+K="\033[91m"; Y="\033[92m"; C="\033[96m"; B="\033[1m"; R="\033[0m"
+
+echo -e "\n${K}${B}root@slayer${R} — Build başlıyor...\n"
+
+# 1. Go kur
+if ! command -v go &>/dev/null; then
+    echo -e "${Y}[+]${R} Go kuruluyor..."
+    apt-get install -y golang-go 2>/dev/null | tail -1
+fi
+echo -e "${Y}[+]${R} Go: $(go version)"
+
+# 2. git kur
+if ! command -v git &>/dev/null; then
+    apt-get install -y git 2>/dev/null | tail -1
+fi
+
+# 3. Gobuster'ı klonla
+BUILD_DIR="/tmp/slayer_build"
+rm -rf "$BUILD_DIR"
+echo -e "${Y}[+]${R} Gobuster kaynak kodu indiriliyor..."
+git clone --depth=1 https://github.com/OJ/gobuster.git "$BUILD_DIR" 2>&1 | tail -2
+cd "$BUILD_DIR" || exit 1
+
+# 4. Türkçeye çevir
+echo -e "${Y}[+]${R} Türkçeye çevriliyor..."
+
+# Banner & Ana mesajlar
+sed -i "s/Gobuster v%s/root@slayer v%s/g" cli/gobuster.go
+sed -i "s/by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)/Türkçe Gobuster — github.com\/slayer/g" cli/gobuster.go
+sed -i "s/Starting gobuster in %s mode/Tarama başlıyor: %s modunda/g" cli/gobuster.go
+sed -i "s/Skipping the first %d elements\.\.\./İlk %d eleman atlanıyor.../g" cli/gobuster.go
+sed -i "s/\"Finished\"/\"Tamamlandı\"/g" cli/gobuster.go
+sed -i "s/Progress:/İlerleme:/g" cli/gobuster.go
+sed -i "s/please provide valid options/Lütfen geçerli seçenekler girin/g" cli/gobuster.go
+sed -i "s/please provide a valid plugin/Lütfen geçerli mod seçin/g" cli/gobuster.go
+sed -i "s/error on creating output file/Çıktı dosyası oluşturulamadı/g" cli/gobuster.go
+sed -i "s/error on writing output file/Dosyaya yazılamadı/g" cli/gobuster.go
+sed -i "s/Unable to write to file/Dosyaya yazılamıyor/g" cli/gobuster.go
+
+# Dir modu
+sed -i "s/Uses directory\/file enumeration mode/Dizin\/dosya kaba kuvvet tarama modu/g" cli/dir/dir.go
+sed -i "s/Positive status codes.*/Kabul edilecek HTTP kodları (ör: 200,301)\",/g" cli/dir/dir.go
+sed -i "s/Negative status codes.*/Reddedilecek HTTP kodları (ör: 404,403)\",/g" cli/dir/dir.go
+sed -i "s/File extension(s) to search for/Aranacak dosya uzantıları (ör: php,html,txt)/g" cli/dir/dir.go
+sed -i "s/Read file extension(s) to search from the file/Uzantıları dosyadan oku/g" cli/dir/dir.go
+sed -i "s/Expanded mode, print full URLs/Genişletilmiş mod - tam URL göster/g" cli/dir/dir.go
+sed -i "s/Hide the length of the body in the output/İçerik boyutunu gizle/g" cli/dir/dir.go
+sed -i "s/Append \/ to each request/Her isteğe \/ ekle/g" cli/dir/dir.go
+sed -i "s/Upon finding a file search for backup files by appending multiple backup extensions/Bulunan dosyalar için yedek uzantı dene/g" cli/dir/dir.go
+
+# DNS modu
+sed -i "s/Uses DNS subdomain enumeration mode/DNS alt alan adı keşif modu/g" cli/dns/dns.go
+sed -i "s/The target domain/Hedef alan adı/g" cli/dns/dns.go
+sed -i "s/Also check CNAME records/CNAME kayıtlarını da kontrol et/g" cli/dns/dns.go
+sed -i "s/DNS resolver timeout/DNS çözümleyici zaman aşımı/g" cli/dns/dns.go
+sed -i "s/Force continued operation when wildcard found/Wildcard bulununca devam et/g" cli/dns/dns.go
+sed -i "s/Use custom DNS server/Özel DNS sunucusu kullan/g" cli/dns/dns.go
+
+# VHost modu
+sed -i "s/Uses VHOST enumeration mode.*/Sanal host (VHost) keşif modu\",/g" cli/vhost/vhost.go
+sed -i "s/Append main domain from URL to words from wordlist.*/Wordlist kelimelerine ana alan adını ekle\",/g" cli/vhost/vhost.go
+
+# Ortak seçenekler
+sed -i "s/Set the User-Agent string/User-Agent belirle/g" cli/options.go
+sed -i "s/Use a random User-Agent string/Rastgele User-Agent kullan/g" cli/options.go
+sed -i "s/Proxy to use for requests.*/İstekler için proxy (http\/socks5)\",/g" cli/options.go
+sed -i "s/HTTP Timeout/HTTP zaman aşımı/g" cli/options.go
+sed -i "s/Skip TLS certificate verification/TLS sertifika doğrulamasını atla/g" cli/options.go
+sed -i "s/Should retry on request timeout/Zaman aşımında tekrar dene/g" cli/options.go
+sed -i "s/Times to retry on request timeout/Tekrar deneme sayısı/g" cli/options.go
+sed -i "s/The target URL/Hedef URL/g" cli/options.go
+sed -i "s/Cookies to use for the requests/İstekler için çerezler/g" cli/options.go
+sed -i "s/Username for Basic Auth/Temel kimlik doğrulama kullanıcı adı/g" cli/options.go
+sed -i "s/Password for Basic Auth/Temel kimlik doğrulama şifresi/g" cli/options.go
+sed -i "s/Follow redirects/Yönlendirmeleri takip et/g" cli/options.go
+sed -i "s/Specify HTTP headers/HTTP başlıkları belirle/g" cli/options.go
+
+# 5. Derle
+echo -e "${Y}[+]${R} Derleniyor (Go build)..."
+go mod tidy 2>&1 | tail -3
+go build -ldflags="-s -w" -o "/usr/local/bin/root@slayer" . 2>&1
+
+# 6. Kontrol
+if [ -f "/usr/local/bin/root@slayer" ]; then
+    chmod +x "/usr/local/bin/root@slayer"
+    echo -e "\n${Y}[+]${R} ${B}Kurulum başarılı!${R}"
+    echo -e "${Y}[+]${R} Binary: /usr/local/bin/root@slayer"
+    echo -e "${Y}[+]${R} Boyut : $(du -h /usr/local/bin/root@slayer | cut -f1)"
+    echo -e "\n${C}Test için:${R}"
+    echo -e "  root@slayer --help"
+    echo -e "  root@slayer dir -u http://testphp.vulnweb.com -w /usr/share/wordlists/dirb/common.txt -t 50\n"
+else
+    echo -e "${K}[!]${R} Build başarısız! Hata çıktısını kontrol et."
+    exit 1
+fi
+
+rm -rf "$BUILD_DIR"
