@@ -1,129 +1,295 @@
 #!/bin/bash
-# root@slayer — Gobuster Kaynak Kodundan Türkçe Build
+HEDEF="/usr/local/bin/root@slayer"
+echo "Yaziliyor..."
+cat > /tmp/slayer_yeni.py << 'PYEOF'
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import sys, argparse, threading, requests, socket, queue, time, signal
+from urllib.parse import urljoin
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-K="\033[91m"; Y="\033[92m"; C="\033[96m"; B="\033[1m"; R="\033[0m"
-echo -e "\n${K}${B}root@slayer${R} — Build başlıyor...\n"
+K="\033[91m";Y="\033[92m";SA="\033[93m";C="\033[96m";G="\033[90m";B="\033[1m";R="\033[0m"
+PFX=f"{K}root@slayer{R}"
 
-# 1. Go kur
-if ! command -v go &>/dev/null; then
-    echo -e "${Y}[+]${R} Go kuruluyor..."
-    apt-get install -y golang-go 2>/dev/null | tail -1
-fi
-echo -e "${Y}[+]${R} Go: $(go version)"
+BANNER=f"""
+{K}{B}
+██████╗  ██████╗  ██████╗ ████████╗ ██╗
+██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝ ██║
+██████╔╝██║   ██║██║   ██║   ██║    ██║
+██╔══██╗██║   ██║██║   ██║   ██║    ╚═╝
+██║  ██║╚██████╔╝╚██████╔╝   ██║    ██╗
+╚═╝  ╚═╝ ╚═════╝  ╚═════╝   ╚═╝    ╚═╝
+{R}{G}     @  S L A Y E R  —  Dizin & DNS Keşif Aracı{R}
+{C}{'═'*56}{R}"""
 
-# 2. git kur
-command -v git &>/dev/null || apt-get install -y git 2>/dev/null | tail -1
+CTF=f"""
+{K}{B}╔══════════════════════════════════════════════════════╗
+║           CTF & PENTEST İPUÇLARI / BYPASS            ║
+╚══════════════════════════════════════════════════════╝{R}
 
-# 3. Gobuster klonla
-BUILD_DIR="/tmp/slayer_build"
-rm -rf "$BUILD_DIR"
-echo -e "${Y}[+]${R} Gobuster kaynak kodu indiriliyor..."
-git clone --depth=1 https://github.com/OJ/gobuster.git "$BUILD_DIR" 2>&1 | tail -2
-cd "$BUILD_DIR" || exit 1
+{PFX} {B}{SA}▶ 403 BYPASS — Header Enjeksiyonu:{R}
+  {PFX} {G}dir -u http://HEDEF -H "X-Forwarded-For: 127.0.0.1" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF -H "X-Real-IP: 127.0.0.1" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF -H "X-Original-URL: /admin" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF -H "X-Rewrite-URL: /admin" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF -H "Referer: https://HEDEF/admin" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF -H "X-Custom-IP-Authorization: 127.0.0.1" -w liste.txt{R}
 
-# 4. Türkçeye çevir — Python ile güvenli
-echo -e "${Y}[+]${R} Türkçeye çevriliyor..."
-python3 << 'PYEOF'
-import re, os
+{PFX} {B}{SA}▶ WAF / IPS BYPASS — User-Agent:{R}
+  {PFX} {G}dir -u http://HEDEF --useragent "Googlebot/2.1" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF --useragent "Mozilla/5.0 (compatible; bingbot/2.0)" -w liste.txt{R}
+  {PFX} {G}dir -u http://HEDEF --useragent "curl/7.64.1" -w liste.txt{R}
 
-# Dosya içeriğini oku, değiştir, yaz
-def replace_in_file(path, replacements):
-    if not os.path.exists(path): return
-    with open(path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    for old, new in replacements:
-        content = content.replace(old, new)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    print(f"  OK: {path}")
+{PFX} {B}{SA}▶ YAVAŞ WAF BYPASS:{R}
+  {PFX} {G}dir -u http://HEDEF -w liste.txt -t 5 --timeout 30{R}
 
-# cli/gobuster.go
-replace_in_file("cli/gobuster.go", [
-    ("Gobuster v%s", "root@slayer v%s"),
-    ("by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)", "Turkce Gobuster — root@slayer"),
-    ("Starting gobuster in %s mode", "Tarama basliyor: %s modunda"),
-    ("Skipping the first %d elements...", "Ilk %d eleman atlaniyor..."),
-    ('"Finished"', '"Tamamlandi"'),
-    ("Progress:", "Ilerleme:"),
-    ("please provide valid options", "Lutfen gecerli secenekler girin"),
-    ("please provide a valid plugin", "Lutfen gecerli mod secin"),
-    ("error on creating output file", "Cikti dosyasi olusturulamadi"),
-    ("error on writing output file", "Dosyaya yazilamadi"),
-    ("Unable to write to file", "Dosyaya yazilamiyor"),
-])
+{PFX} {B}{SA}▶ GİZLİ PANEL / ADMİN BULMA:{R}
+  {PFX} {G}dir -u http://HEDEF -w liste.txt -x php,html,asp,aspx,jsp,txt,bak,old,zip{R}
+  {PFX} {G}dir -u http://HEDEF -w liste.txt -x bak,old,zip,tar,gz,sql,env,config,yml,json{R}
+  {PFX} {G}dir -u http://HEDEF -w liste.txt -s 200,301,302{R}
 
-# cli/dir/dir.go
-replace_in_file("cli/dir/dir.go", [
-    ("Uses directory/file enumeration mode", "Dizin/dosya kaba kuvvet tarama modu"),
-    ("File extension(s) to search for", "Aranacak dosya uzantilari (orn: php,html,txt)"),
-    ("Read file extension(s) to search from the file", "Uzantilari dosyadan oku"),
-    ("Expanded mode, print full URLs", "Genisletilmis mod - tam URL goster"),
-    ("Don't print status codes", "HTTP kodlarini gosterme"),
-    ("Hide the length of the body in the output", "Icerik boyutunu gizle"),
-    ("Append / to each request", "Her istege / ekle"),
-    ("Upon finding a file search for backup files by appending multiple backup extensions", "Bulunan dosyalar icin yedek uzanti dene"),
-    ("Continue even if the prechecks fail.", "On kontroller basarisiz olsa bile devam et."),
-])
+{PFX} {B}{SA}▶ CTF — BÜYÜK LİSTE:{R}
+  {PFX} {G}dir -u http://HEDEF -t 50 -w /usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt{R}
+  {PFX} {G}dir -u http://HEDEF -t 50 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt{R}
 
-# cli/dns/dns.go
-replace_in_file("cli/dns/dns.go", [
-    ("Uses DNS subdomain enumeration mode", "DNS alt alan adi kesif modu"),
-    ("The target domain", "Hedef alan adi"),
-    ("Also check CNAME records", "CNAME kayitlarini da kontrol et"),
-    ("DNS resolver timeout", "DNS cozumleyici zaman asimi"),
-    ("Force continued operation when wildcard found", "Wildcard bulunca devam et"),
-    ("Use custom DNS server (format server.com or server.com:port)", "Ozel DNS sunucusu kullan (sunucu.com veya sunucu.com:port)"),
-    ("Use either 'udp' or 'tcp' as protocol on the custom resolver", "Ozel cozumleyici icin protokol: udp veya tcp"),
-    ("Do not automatically add a trailing dot", "Sona otomatik nokta ekleme"),
-])
+{PFX} {B}{SA}▶ API ENDPOINT KEŞFİ:{R}
+  {PFX} {G}dir -u http://HEDEF/api -w liste.txt -x json,xml -t 30{R}
 
-# cli/vhost/vhost.go
-replace_in_file("cli/vhost/vhost.go", [
-    ("Uses VHOST enumeration mode (you most probably want to use the IP address as the URL parameter)", "Sanal host (VHost) kesif modu"),
-    ("Append main domain from URL to words from wordlist. Otherwise the fully qualified domains need to be specified in the wordlist.", "Wordlist kelimelerine ana alan adini ekle"),
-    ("Force execution even when result is not guaranteed.", "Sonuc garantilenmese de zorla calistir"),
-    ("Automatically adjust exclude-length based on dynamic hostname length in responses", "Yanita gore exclude-length otomatik ayarla"),
-])
+{PFX} {B}{SA}▶ VHOST / ALT ALAN KEŞFİ:{R}
+  {PFX} {G}dns -d HEDEF.com --show-ips -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt{R}
+  {PFX} {G}vhost -u http://HEDEF.com -d HEDEF.com -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -t 40{R}
 
-# cli/options.go — sadece Usage string'leri değiştir
-replace_in_file("cli/options.go", [
-    ('"Set the User-Agent string"', '"User-Agent belirle"'),
-    ('"Use a random User-Agent string"', '"Rastgele User-Agent kullan"'),
-    ('"HTTP Timeout"', '"HTTP zaman asimi"'),
-    ('"Skip TLS certificate verification"', '"TLS sertifika dogrulamasini atla"'),
-    ('"Should retry on request timeout"', '"Zaman asiminda tekrar dene"'),
-    ('"Times to retry on request timeout"', '"Tekrar deneme sayisi"'),
-    ('"The target URL"', '"Hedef URL"'),
-    ('"Cookies to use for the requests"', '"Istekler icin cerezler"'),
-    ('"Username for Basic Auth"', '"Temel kimlik dogrulama kullanici adi"'),
-    ('"Password for Basic Auth"', '"Temel kimlik dogrulama sifresi"'),
-    ('"Follow redirects"', '"Yonlendirmeleri takip et"'),
-    ('"Specify HTTP headers, -H \'Header1: val1\' -H \'Header2: val2\'"', '"HTTP basliklari belirle: -H \'Baslik1: deger1\'"'),
-    ('"Wordlist to use for the requests"', '"Kelime listesi dosyasi"'),
-    ('"Number of concurrent goroutines"', '"Es zamanli is parcacigi sayisi"'),
-    ('"Do not print the progress to stderr"', '"Ilerlemeyi gosterme"'),
-    ('"Output file to write results to (defaults to stdout)"', '"Sonuclari kaydet"'),
-    ('"Add an extra delay between requests (0 means disabled)"', '"Istekler arasi gecikme ekle"'),
-    ('"Proxy to use for requests [http(s)://host:port] or [socks5://host:port]"', '"Istekler icin proxy [http(s)://host:port]"'),
-])
+{PFX} {B}{SA}▶ KİMLİK DOĞRULAMA BYPASS:{R}
+  {PFX} {G}dir -u http://HEDEF -w liste.txt -U admin -P admin{R}
+  {PFX} {G}dir -u http://HEDEF -w liste.txt -c "PHPSESSID=abc123; isAdmin=true"{R}
 
-print("Tum ceviriler tamamlandi!")
+{PFX} {B}{SA}▶ TAVSİYE EDİLEN WORDLİSTLER:{R}
+  {PFX} {Y}/usr/share/wordlists/dirb/common.txt{R}                                   {G}← hızlı{R}
+  {PFX} {Y}/usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt{R}           {G}← CTF standart{R}
+  {PFX} {Y}/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt{R}   {G}← kapsamlı{R}
+  {PFX} {Y}/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt{R}      {G}← DNS{R}
+
+{C}{'═'*56}{R}"""
+
+durduruluyor=threading.Event()
+kilit=threading.Lock()
+bulunanlar=[]
+toplam_istek=[0]
+
+def _dur(s,f):
+    durduruluyor.set()
+    print(f"\n{PFX} {SA}[!]{R} Durduruldu — Bulunan: {B}{len(bulunanlar)}{R}")
+    sys.exit(0)
+signal.signal(signal.SIGINT,_dur)
+
+def inf(k,v):   print(f"{PFX} {Y}[+]{R} {B}{k}{R}: {C}{v}{R}")
+def err(m):     print(f"{PFX} {K}[!]{R} {K}{m}{R}")
+def kaydet(f,t):
+    try: open(f,"a",encoding="utf-8").write(t+"\n")
+    except: pass
+
+def kelime_oku(dosya):
+    try:
+        with open(dosya,"r",encoding="utf-8",errors="ignore") as f:
+            s=[l.strip() for l in f if l.strip() and not l.startswith("#")]
+        inf("Kelime Listesi",f"{dosya} ({B}{len(s)}{R} kelime)")
+        return s
+    except FileNotFoundError:
+        err(f"Dosya bulunamadı: {dosya}"); sys.exit(1)
+
+def durum_rengi(k):
+    if 200<=k<300: return Y
+    if 300<=k<400: return C
+    if k in (401,403): return SA
+    if 500<=k<600: return K
+    return G
+
+def baslangic(mod, url=None, alan=None, args=None, ekstra=None):
+    print(f"\n{C}{'═'*56}{R}")
+    if url:  inf("Url             ", url)
+    if alan: inf("Alan Adı        ", alan)
+    inf("Mod             ", mod)
+    inf("Metod           ", "GET")
+    inf("İş Parçacığı    ", str(args.threads))
+    if ekstra:
+        for k,v in ekstra.items(): inf(k,v)
+    inf("Engellenen Kodlar", args.negative_status_codes or "404")
+    inf("User-Agent      ", args.useragent)
+    inf("Zaman Aşımı     ", f"{args.timeout}s")
+    if args.output: inf("Çıktı Dosyası   ", args.output)
+    print(f"{C}{'─'*56}{R}")
+    print(f"{PFX} {G}Tarama başlıyor — dizin listeleme modunda{R}")
+    print(f"{C}{'─'*56}{R}\n")
+
+def dizin_isci(base,q,uzantilar,gecerli,engel,zaman,ses,cikti):
+    while not durduruluyor.is_set():
+        try: kelime=q.get_nowait()
+        except queue.Empty: break
+        denemeler=[kelime]+([f"{kelime}.{u.lstrip('.')}" for u in uzantilar] if uzantilar else [])
+        for d in denemeler:
+            if durduruluyor.is_set(): break
+            url=urljoin(base.rstrip("/")+"/",d)
+            try:
+                r=ses.get(url,timeout=zaman,allow_redirects=True,verify=False)
+                with kilit: toplam_istek[0]+=1
+                if r.status_code in engel: continue
+                if gecerli and r.status_code not in gecerli: continue
+                rk=durum_rengi(r.status_code); boy=len(r.content)
+                with kilit:
+                    print(f"{PFX} {rk}[{r.status_code}]{R} {B}{url}{R} {G}(Boyut: {boy}){R}")
+                    bulunanlar.append(url)
+                    if cikti: kaydet(cikti,f"[{r.status_code}] {url} (Boyut: {boy})")
+            except: pass
+        q.task_done()
+
+def dizin_modu(args):
+    hedef=args.url
+    if not hedef.startswith("http"): hedef="http://"+hedef
+    kelimeler=kelime_oku(args.wordlist)
+    uzantilar=[u.strip() for u in args.extensions.split(",")] if args.extensions else []
+    gecerli=set(int(x) for x in args.status_codes.split(",")) if args.status_codes else set()
+    engel=set(int(x) for x in args.negative_status_codes.split(",")) if args.negative_status_codes else {404}
+    ses=requests.Session(); ses.headers["User-Agent"]=args.useragent
+    if args.cookies:
+        for c in args.cookies.split(";"):
+            p=c.strip().split("=",1)
+            if len(p)==2: ses.cookies.set(p[0].strip(),p[1].strip())
+    if args.headers:
+        for h in args.headers:
+            p=h.split(":",1)
+            if len(p)==2: ses.headers[p[0].strip()]=p[1].strip()
+    if args.username and args.password: ses.auth=(args.username,args.password)
+    ekstra={}
+    if uzantilar: ekstra["Uzantılar       "]=", ".join(uzantilar)
+    baslangic("Dizin / Dosya Tarama",url=hedef,args=args,ekstra=ekstra)
+    t0=time.time(); q=queue.Queue()
+    for k in kelimeler: q.put(k)
+    isc=[threading.Thread(target=dizin_isci,args=(hedef,q,uzantilar,gecerli,engel,args.timeout,ses,args.output),daemon=True) for _ in range(min(args.threads,len(kelimeler)))]
+    for t in isc: t.start()
+    for t in isc: t.join()
+    print(f"\n{C}{'═'*56}{R}")
+    print(f"{PFX} {Y}[+]{R} Tamamlandı — Süre: {B}{time.time()-t0:.2f}s{R}")
+    print(f"{PFX} {Y}[+]{R} Toplam İstek: {B}{toplam_istek[0]}{R}")
+    print(f"{PFX} {Y}[+]{R} Bulunan     : {Y}{B}{len(bulunanlar)}{R}")
+    print(f"{C}{'═'*56}{R}\n")
+
+def dns_isci(alan,q,cikti,goster_ip):
+    while not durduruluyor.is_set():
+        try: alt=q.get_nowait()
+        except queue.Empty: break
+        hedef=f"{alt}.{alan}"
+        try:
+            ipler=socket.gethostbyname_ex(hedef)[2]
+            with kilit:
+                satir=f"{PFX} {Y}[+]{R} {B}{hedef}{R}"
+                if goster_ip: satir+=f" {G}[{', '.join(ipler)}]{R}"
+                print(satir); bulunanlar.append(hedef)
+                if cikti: kaydet(cikti,hedef+(f" [{', '.join(ipler)}]" if goster_ip else ""))
+        except: pass
+        finally:
+            with kilit: toplam_istek[0]+=1
+            q.task_done()
+
+def dns_modu(args):
+    alan=args.domain.lstrip("*. "); kelimeler=kelime_oku(args.wordlist)
+    baslangic("DNS Alt Alan Tarama",alan=alan,args=args)
+    t0=time.time(); q=queue.Queue()
+    for k in kelimeler: q.put(k)
+    isc=[threading.Thread(target=dns_isci,args=(alan,q,args.output,args.show_ips),daemon=True) for _ in range(min(args.threads,len(kelimeler)))]
+    for t in isc: t.start()
+    for t in isc: t.join()
+    print(f"\n{C}{'═'*56}{R}")
+    print(f"{PFX} {Y}[+]{R} Tamamlandı — Süre: {B}{time.time()-t0:.2f}s{R}")
+    print(f"{PFX} {Y}[+]{R} Toplam Deneme: {B}{toplam_istek[0]}{R}")
+    print(f"{PFX} {Y}[+]{R} Bulunan      : {Y}{B}{len(bulunanlar)}{R}")
+    print(f"{C}{'═'*56}{R}\n")
+
+def vhost_isci(base,alan,q,gecerli,engel,zaman,ses,cikti):
+    while not durduruluyor.is_set():
+        try: kelime=q.get_nowait()
+        except queue.Empty: break
+        vhost=f"{kelime}.{alan}"
+        try:
+            r=ses.get(base,headers={"Host":vhost},timeout=zaman,allow_redirects=False,verify=False)
+            with kilit: toplam_istek[0]+=1
+            if r.status_code in engel: q.task_done(); continue
+            if gecerli and r.status_code not in gecerli: q.task_done(); continue
+            rk=durum_rengi(r.status_code); boy=len(r.content)
+            with kilit:
+                print(f"{PFX} {rk}[{r.status_code}]{R} {B}{vhost}{R} {G}(Boyut: {boy}){R}")
+                bulunanlar.append(vhost)
+                if cikti: kaydet(cikti,f"[{r.status_code}] {vhost} (Boyut: {boy})")
+        except:
+            with kilit: toplam_istek[0]+=1
+        q.task_done()
+
+def vhost_modu(args):
+    hedef=args.url
+    if not hedef.startswith("http"): hedef="http://"+hedef
+    alan=args.domain; kelimeler=kelime_oku(args.wordlist)
+    gecerli=set(int(x) for x in args.status_codes.split(",")) if args.status_codes else set()
+    engel=set(int(x) for x in args.negative_status_codes.split(",")) if args.negative_status_codes else {404}
+    ses=requests.Session(); ses.headers["User-Agent"]=args.useragent
+    baslangic("Sanal Host Tarama",url=hedef,alan=alan,args=args)
+    t0=time.time(); q=queue.Queue()
+    for k in kelimeler: q.put(k)
+    isc=[threading.Thread(target=vhost_isci,args=(hedef,alan,q,gecerli,engel,args.timeout,ses,args.output),daemon=True) for _ in range(min(args.threads,len(kelimeler)))]
+    for t in isc: t.start()
+    for t in isc: t.join()
+    print(f"\n{C}{'═'*56}{R}")
+    print(f"{PFX} {Y}[+]{R} Tamamlandı — Süre: {B}{time.time()-t0:.2f}s{R}")
+    print(f"{PFX} {Y}[+]{R} Toplam İstek: {B}{toplam_istek[0]}{R}")
+    print(f"{PFX} {Y}[+]{R} Bulunan     : {Y}{B}{len(bulunanlar)}{R}")
+    print(f"{C}{'═'*56}{R}\n")
+
+def ekle(p,url=False,domain=False):
+    if url:    p.add_argument("-u","--url",    required=True,metavar="URL")
+    if domain: p.add_argument("-d","--domain", required=True,metavar="ALAN")
+    p.add_argument("-w","--wordlist",   required=True,metavar="DOSYA")
+    p.add_argument("-t","--threads",    type=int,default=10,metavar="SAYI")
+    p.add_argument("-o","--output",     default=None,metavar="DOSYA")
+    p.add_argument("--timeout",         type=int,default=10,metavar="SN")
+    p.add_argument("-s","--status-codes",          default=None,metavar="200,301")
+    p.add_argument("-b","--negative-status-codes", default=None,metavar="404,403")
+    p.add_argument("--useragent",default="root@slayer/1.0",metavar="UA")
+
+def ana():
+    print(BANNER)
+    ap=argparse.ArgumentParser(prog="root@slayer",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=f"{K}{B}root@slayer{R} — Türkçe Dizin, DNS ve Sanal Host Tarama Aracı",
+        epilog=f"\n{B}Modlar:{R}\n  dir    → Dizin/dosya tarama\n  dns    → DNS alt alan keşfi\n  vhost  → Sanal host keşfi\n  ipucu  → CTF/Pentest bypass komutları\n\n{B}Örnek:{R}\n  root@slayer dir -u http://HEDEF -w /usr/share/wordlists/dirb/common.txt\n  root@slayer ipucu\n")
+    alt=ap.add_subparsers(dest="mod",metavar="MOD")
+    dp=alt.add_parser("dir",help="Dizin/dosya kaba kuvvet taraması")
+    ekle(dp,url=True)
+    dp.add_argument("-x","--extensions",default=None,metavar="php,txt")
+    dp.add_argument("-c","--cookies",   default=None,metavar="CEREZ=DEGER")
+    dp.add_argument("-H","--headers",   action="append",default=[],metavar="Ad: Deger")
+    dp.add_argument("-U","--username",  default=None,metavar="KULLANICI")
+    dp.add_argument("-P","--password",  default=None,metavar="SIFRE")
+    dnsp=alt.add_parser("dns",help="DNS alt alan keşfi")
+    ekle(dnsp,domain=True)
+    dnsp.add_argument("--show-ips",action="store_true",default=False)
+    vp=alt.add_parser("vhost",help="Sanal host keşfi")
+    ekle(vp,url=True,domain=True)
+    alt.add_parser("ipucu",help="CTF/Pentest bypass komutlarını göster")
+    if len(sys.argv)==1: ap.print_help(); sys.exit(0)
+    args=ap.parse_args()
+    if   args.mod=="dir":   dizin_modu(args)
+    elif args.mod=="dns":   dns_modu(args)
+    elif args.mod=="vhost": vhost_modu(args)
+    elif args.mod=="ipucu": print(CTF)
+    else: ap.print_help()
+
+if __name__=="__main__":
+    ana()
 PYEOF
 
-# 5. Derle
-echo -e "${Y}[+]${R} Derleniyor..."
-go mod tidy 2>&1 | tail -2
-go build -ldflags="-s -w" -o "/usr/local/bin/root@slayer" . 2>&1
+sudo cp /tmp/slayer_yeni.py /usr/local/bin/root@slayer
+sudo chmod +x /usr/local/bin/root@slayer
+pip3 install requests -q --break-system-packages 2>/dev/null
 
-# 6. Kontrol
-if [ -f "/usr/local/bin/root@slayer" ]; then
-    chmod +x "/usr/local/bin/root@slayer"
-    echo -e "\n${Y}[+]${R} ${B}Kurulum basarili!${R}"
-    echo -e "${Y}[+]${R} Boyut: $(du -h /usr/local/bin/root@slayer | cut -f1)"
-    echo -e "\n${C}Test:${R} root@slayer --help\n"
-else
-    echo -e "${K}[!]${R} Build basarisiz!"
-    exit 1
-fi
-
-rm -rf "$BUILD_DIR"
+echo ""
+echo "[+] Kurulum tamamlandi!"
+echo "[+] Test: root@slayer --help"
