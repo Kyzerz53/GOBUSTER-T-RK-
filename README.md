@@ -170,7 +170,7 @@ sudo apt install seclists dirb -y
 ## ⚠️ Yasal Uyarı
 
 Bu araç yalnızca **yetkili** sistemlerde ve **eğitim amaçlı** kullanım içindir.
-İzinsiz sistemlere karşı kullanmak **yasaldır.**
+İzinsiz sistemlere karşı kullanmak **yasaktır.**
 
 ---
 
